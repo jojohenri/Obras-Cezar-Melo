@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gastos da Obra</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--tx:#1f2421;--mut:#6b726d;--bd:#e0ddd4;--ac:#c2571a;--ok:#2f7d4f;--bad:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#181a18;--card:#222522;--tx:#ecebe6;--mut:#9aa19c;--bd:#363a36;--ac:#e8803f;--ok:#5fbf86;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#181a18;--card:#222522;--tx:#ecebe6;--mut:#9aa19c;--bd:#363a36;--ac:#e8803f;--ok:#5fbf86;--bad:#ff8a80}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:960px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 14px}h2{font-size:15px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input,select,button,textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;width:100%}
+button{cursor:pointer;width:auto;background:var(--ac);color:#fff;border:0;font-weight:600;padding:9px 16px}
+button.g{background:transparent;color:var(--tx);border:1px solid var(--bd);font-weight:400}
+.kpi b{display:block;font-size:20px}.kpi span{font-size:12px;color:var(--mut)}
+.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ok)}
+.sc{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--bd);font-size:14px}
+th{font-size:12px;color:var(--mut);font-weight:600}td.n,th.n{text-align:right;white-space:nowrap}
+.x{background:none;color:var(--bad);padding:2px 8px;border:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.row>*{flex:1;min-width:130px}.row>button{flex:0 0 auto}
+.cat{display:flex;justify-content:space-between;padding:4px 0;font-size:14px}
+.mut{color:var(--mut);font-size:13px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.tab{background:var(--card);color:var(--tx);border:1px solid var(--bd);white-space:nowrap;font-weight:400}
+.tab.on{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+<h1>🏗️ Gastos da Obra <small id="sst" class="mut" style="font-weight:400"></small></h1>
+<div class="card row" id="avs" style="display:none;border-color:var(--bad)"><span id="avt" style="flex:1;color:var(--bad)"></span><button id="avb">Ir para Backup</button></div>
+<div class="card row" id="cfl" style="display:none"><span style="flex:1">☁️ Há dados salvos na nuvem e também neste navegador. Qual deseja usar?</span><button id="cfn">Usar os da nuvem</button><button class="g" id="cfl2">Manter os deste navegador</button></div>
+<div class="tabs" id="tabs"></div>
+<div class="card row" id="obrabar">
+ <div><label>Nome da obra</label><input id="nn" placeholder="Ex.: Casa da Rua das Flores"></div>
+ <button id="nova">+ Criar nova obra</button><button id="fim" style="background:var(--ok)">Finalizar obra</button><button class="g" id="ren">Renomear atual</button><button class="g" id="dob">Excluir obra</button>
+</div>
+
+<div class="card row" id="ban" style="display:none"><span id="bant" style="flex:1"></span><button id="reab">Reabrir obra</button></div>
+<div class="card" id="bkpc" style="display:none"><h2>💾 Backup e transferência</h2>
+<p class="mut">Os dados ficam apenas neste navegador. Para levar para outro navegador ou aparelho: baixe o backup aqui, abra o site no outro lugar e importe o arquivo na mesma aba.</p>
+<p class="mut" id="bkinfo"></p>
+<h2 style="margin-top:14px">📊 Uso de memória</h2>
+<div id="mem"></div>
+<div class="row"><button id="bkdl">Baixar backup (arquivo)</button><button class="g" id="bkcp">Copiar backup como texto</button></div>
+<h2 style="margin-top:18px">Importar backup</h2>
+<label>Arquivo de backup (.json)</label><input type="file" id="bkf" accept=".json,application/json">
+<label style="margin-top:8px">ou cole aqui o texto do backup</label><textarea id="bkt" rows="4"></textarea>
+<div class="row" style="margin-top:8px"><button id="bkrep">Substituir tudo</button><button class="g" id="bkmer">Mesclar com os dados atuais</button></div>
+<p class="mut" id="bkmsg"></p></div>
+<div class="card" id="finc" style="display:none"><h2>📁 Obras finalizadas</h2><div id="finl"></div></div>
+<div class="grid" id="kpis" style="margin-bottom:14px">
+ <div class="card kpi" style="margin:0"><span>Total gasto</span><b id="tot">R$ 0,00</b></div>
+</div>
+
+<div class="card" id="formc">
+ <h2>Novo lançamento</h2>
+ <div class="grid">
+  <div><label>Data</label><input type="date" id="d"></div>
+  <div><label>Categoria</label><select id="c"><option>Material</option><option>Mão de obra</option><option>Projeto/Taxas</option><option>Equipamento/Aluguel</option><option>Frete</option><option>Acabamento</option><option>Elétrica</option><option>Hidráulica</option><option>Outros</option></select></div>
+  <div><label>Etapa da obra</label><select id="e"><option>Planejamento</option><option>Fundação</option><option>Estrutura</option><option>Alvenaria</option><option>Cobertura</option><option>Instalações</option><option>Reboco</option><option>Acabamento</option><option>Pintura</option><option>Outra</option></select></div>
+  <div><label>Pagamento</label><select id="p"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Boleto</option><option>Transferência</option></select></div>
+  <div style="grid-column:span 2"><label>Descrição</label><input id="ds" placeholder="Ex.: 20 sacos de cimento CP-II"></div>
+  <div><label>Fornecedor</label><input id="f" placeholder="Ex.: Depósito Silva"></div>
+  <div><label>Nota/Recibo nº</label><input id="nf"></div>
+  <div><label>Valor (R$)</label><input id="v" type="number" step="0.01" min="0" inputmode="decimal"></div>
+ </div>
+ <p style="margin:12px 0 0"><button id="add">Adicionar</button> <span class="mut" id="msg"></span></p>
+</div>
+
+<div class="card" id="catc">
+ <h2>Resumo por categoria</h2>
+ <div id="cats"><span class="mut">Sem lançamentos.</span></div>
+</div>
+
+<div class="card" id="lanc">
+ <h2>Lançamentos</h2>
+ <div class="row" style="margin-bottom:10px">
+  <div><label>Buscar</label><input id="q" placeholder="descrição, fornecedor, nota"></div>
+  <div><label>Categoria</label><select id="fc"><option value="">Todas</option></select></div>
+  <div><label>Etapa</label><select id="fe"><option value="">Todas</option></select></div>
+ </div>
+ <div class="sc"><table><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Etapa</th><th>Fornecedor</th><th>Pgto</th><th class="n">Valor</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+ <p class="mut" id="sub"></p>
+ <div class="row" style="margin-top:8px"><button id="pdf">Gerar PDF</button><button class="g" id="clr">Apagar lançamentos</button></div>
+ <p class="mut">Os dados ficam salvos neste navegador. Use a aba Backup para guardar uma cópia ou levar para outro navegador.</p>
+</div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+window.__dl={save:async({filename,data})=>{
+ const mob=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const pdf=/\.pdf$/i.test(filename),type=pdf?'application/pdf':'text/plain';
+ let file;try{file=new File([data],filename,{type})}catch(e){file=new Blob([data],{type})}
+ if(mob&&navigator.share&&navigator.canShare&&file instanceof File&&navigator.canShare({files:[file]})){
+  try{await navigator.share({files:[file],title:filename});return}catch(e){if(e&&e.name==='AbortError')return}
+ }
+ const url=URL.createObjectURL(file),a=document.createElement('a');
+ a.href=url;a.download=filename;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
+ if(mob&&pdf)setTimeout(()=>{try{window.open(url,'_blank')}catch(e){}},400);
+ setTimeout(()=>URL.revokeObjectURL(url),120000)
+}};
+const $=id=>document.getElementById(id),K='gastos-obra-v1';
+let S={obras:[],cur:0};
+try{const r=JSON.parse(localStorage.getItem(K)||'null');if(r){S=r.obras?r:{obras:[{id:1,nome:'Minha obra',items:r.items||[]}],cur:1}}}catch(e){}
+if(!S.obras)S.obras=[];if(!S.obras.some(o=>!o.fim))S.obras.push({id:Date.now(),nome:'Minha obra',items:[]});
+const cur=()=>S.obras.find(o=>o.id==S.cur)||S.obras.find(o=>!o.fim)||S.obras[0];
+const sh=(i,b)=>{$(i).style.display=b?'':'none'};
+const syn={col:null,last:0};let lastJ=null,st=null,busy=0,again=0;
+const ss=t=>{const e=$('sst');if(e)e.textContent=t};
+const hm=()=>new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+const lsw=()=>{try{localStorage.setItem(K,JSON.stringify(S));window.sf=0}catch(e){window.sf=1}};
+const save=()=>{const j=JSON.stringify(S.obras);if(j!==lastJ){lastJ=j;S.ts=Date.now();push()}lsw()};
+const R=n=>(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dt=s=>s?s.split('-').reverse().join('/'):'';
+$('d').value=new Date().toISOString().slice(0,10);
+['c','e'].forEach(i=>{const t=i=='c'?'fc':'fe';[...$(i).options].forEach(o=>$(t).add(new Option(o.text,o.text)))});
+$('add').onclick=()=>{
+ const v=parseFloat($('v').value),ds=$('ds').value.trim();
+ if(!ds||!(v>0)){$('msg').textContent='Informe descrição e valor.';return}
+ cur().items.push({id:Date.now(),d:$('d').value,c:$('c').value,e:$('e').value,p:$('p').value,ds,f:$('f').value.trim(),nf:$('nf').value.trim(),v});
+ save();['ds','f','nf','v'].forEach(i=>$(i).value='');$('msg').textContent='Adicionado ✓';render();
+};
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(b){if(b.dataset.id=='fin'||b.dataset.id=='bkp')S.view=b.dataset.id;else{S.view='';S.cur=+b.dataset.id}save();render()}};
+$('nova').onclick=()=>{const n=$('nn').value.trim();if(!n){$('nn').focus();return}const o={id:Date.now(),nome:n,items:[]};S.obras.push(o);S.cur=o.id;$('nn').value='';save();render()};
+$('ren').onclick=()=>{const n=$('nn').value.trim();if(!n){$('nn').focus();return}cur().nome=n;$('nn').value='';save();render()};
+let a1=0,a2=0,a3=0;
+$('fim').onclick=()=>{if(!a3){a3=1;$('fim').textContent='Confirmar finalização?';setTimeout(()=>{a3=0;$('fim').textContent='Finalizar obra'},4000);return}
+ a3=0;$('fim').textContent='Finalizar obra';cur().fim=new Date().toISOString().slice(0,10);
+ let n=S.obras.find(x=>!x.fim);if(!n){n={id:Date.now(),nome:'Nova obra',items:[]};S.obras.push(n)}
+ S.cur=n.id;S.view='fin';save();render()};
+window.abr=id=>{S.cur=id;S.view='';save();render()};
+window.reab=id=>{const x=S.obras.find(o=>o.id==id);if(x){delete x.fim;S.cur=id;S.view='';save();render()}};
+$('reab').onclick=()=>reab(cur().id);
+$('dob').onclick=()=>{if(!a1){a1=1;$('dob').textContent='Confirmar exclusão?';setTimeout(()=>{a1=0;$('dob').textContent='Excluir obra'},4000);return}
+ a1=0;const id=cur().id;S.obras=S.obras.filter(o=>o.id!=id);if(!S.obras.some(o=>!o.fim))S.obras.push({id:Date.now(),nome:'Minha obra',items:[]});S.cur=S.obras.find(o=>!o.fim).id;S.view='';$('dob').textContent='Excluir obra';save();render()};
+['q','fc','fe'].forEach(i=>$(i).oninput=render);
+$('clr').onclick=()=>{if(!a2){a2=1;$('clr').textContent='Confirmar: apagar lançamentos desta obra?';setTimeout(()=>{a2=0;$('clr').textContent='Apagar lançamentos'},4000);return}a2=0;cur().items=[];$('clr').textContent='Apagar lançamentos';save();render()};
+async function gerarPdf(o){
+ const m=$('sub');
+ if(!o.items.length){m.textContent='Não há lançamentos nesta obra.';return}
+ if(!window.jspdf){m.textContent='A biblioteca de PDF não carregou.';return}
+ let dl=null;try{dl=window.__dl}catch(e){}
+ if(!dl){m.textContent='Download de arquivos indisponível aqui.';return}
+ const doc=new window.jspdf.jsPDF({orientation:'landscape'}),f=n=>R(n).replace(/\u00a0/g,' ');
+ const L=[...o.items].sort((a,b)=>(a.d||'').localeCompare(b.d||'')),tot=L.reduce((a,i)=>a+i.v,0);
+ const fin=!!o.fim;
+ doc.setFontSize(16);doc.text((fin?'Relatório final da obra: ':'Gastos da obra: ')+o.nome,14,15);
+ doc.setFontSize(9);doc.text((fin?'Finalizada em '+dt(o.fim)+' - ':'')+'Gerado em '+new Date().toLocaleDateString('pt-BR')+' - '+L.length+' lançamentos',14,21);
+ let y=26;
+ if(fin){
+  const grp=k=>{const g={};L.forEach(i=>{const n=i[k]||'-';g[n]=(g[n]||0)+i.v});return Object.entries(g).sort((a,b)=>b[1]-a[1]).map(([n,v])=>[n,f(v),(tot?v/tot*100:0).toFixed(1)+'%'])};
+  const tb=(t,lb,k)=>{doc.setFontSize(12);doc.text(t,14,y+4);doc.autoTable({startY:y+7,head:[[lb,'Total gasto','% do total']],body:grp(k),foot:[['Total',f(tot),'100%']],showFoot:'lastPage',styles:{fontSize:9},headStyles:{fillColor:[194,87,26]},footStyles:{fillColor:[238,238,238],textColor:0},columnStyles:{1:{halign:'right'},2:{halign:'right'}},margin:{left:14,right:14}});y=doc.lastAutoTable.finalY+8};
+  tb('Gasto por categoria','Categoria','c');tb('Gasto por etapa','Etapa','e');
+  if(y>175){doc.addPage();y=15}
+  doc.setFontSize(12);doc.text('Lançamentos',14,y+4);y+=7;
+ }
+ doc.autoTable({startY:y,head:[['Data','Descrição','Categoria','Etapa','Fornecedor','Pgto','Nota','Valor']],
+  body:L.map(i=>[dt(i.d),i.ds,i.c,i.e,i.f,i.p,i.nf,f(i.v)]),foot:[['','','','','','','Total',f(tot)]],
+  styles:{fontSize:8},headStyles:{fillColor:[194,87,26]},footStyles:{fillColor:[238,238,238],textColor:0},columnStyles:{7:{halign:'right'}},showFoot:'lastPage'});
+ const slug=o.nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,'-').toLowerCase().replace(/^-|-$/g,'')||'obra';
+ try{await dl.save({filename:(fin?'relatorio-':'gastos-')+slug+'.pdf',data:doc.output('blob')});m.textContent=''}
+ catch(e){if(!e||e.code!='declined')m.textContent='Não foi possível salvar o PDF.'}
+}
+$('pdf').onclick=()=>gerarPdf(cur());
+window.rel=id=>{const x=S.obras.find(o=>o.id==id);if(x)gerarPdf(x)};
+let a4=0;
+const LIM=5*1024*1024,sz=x=>new Blob([JSON.stringify(x)]).size,kb=n=>n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(2)+' MB';
+$('avb').onclick=()=>{S.view='bkp';save();render()};
+function memo(){
+ const tot=sz(S),p=tot/LIM*100,col=p>90?'var(--bad)':p>70?'#d9a400':'var(--ok)';
+ const rows=S.obras.map(o=>({o,b:sz(o)})).sort((a,b)=>b.b-a.b);
+ $('mem').innerHTML=`<div class="card" style="margin:8px 0 12px;background:var(--bg)"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:14px"><b>Espaço usado</b><span>${kb(tot)} de ~5 MB (${p.toFixed(1)}%)</span></div><div class="bar" style="height:14px"><i style="width:${Math.min(100,Math.max(p,0.5))}%;background:${col}"></i></div><p class="mut" style="margin:6px 0 0">Livre: ${kb(Math.max(LIM-tot,0))}. ${p>90?'Quase cheio: faça backup e apague lançamentos antigos.':p>70?'Atenção: o espaço está acabando.':'Tudo certo.'}</p></div><div class="sc"><table style="min-width:420px"><thead><tr><th>Obra</th><th class="n">Lanç.</th><th class="n">Tamanho</th><th style="width:38%">% do limite</th></tr></thead><tbody>${rows.map(({o,b})=>`<tr><td>${esc(o.nome)}${o.fim?' <span class="mut">(finalizada)</span>':''}</td><td class="n">${o.items.length}</td><td class="n">${kb(b)}</td><td><div class="bar" style="margin:0"><i style="width:${Math.min(100,Math.max(b/LIM*100,1))}%;background:var(--ac)"></i></div></td></tr>`).join('')}</tbody></table></div><p class="mut">Valores estimados; o limite real varia conforme o navegador.</p>`;
+}
+const bkData=()=>JSON.stringify({app:'gastos-obra',v:1,em:new Date().toISOString(),dados:S});
+const bm=t=>{$('bkmsg').textContent=t};
+$('bkdl').onclick=async()=>{let dl=null;try{dl=window.__dl}catch(e){}
+ if(!dl){bm('Download indisponível aqui. Use "Copiar backup como texto".');return}
+ try{await dl.save({filename:'backup-gastos-obra-'+new Date().toISOString().slice(0,10)+'.json',data:new Blob([bkData()],{type:'application/json'})});bm('Backup salvo ✓')}
+ catch(e){if(!e||e.code!='declined')bm('Não foi possível salvar o backup.')}};
+$('bkcp').onclick=async()=>{const t=bkData();try{await navigator.clipboard.writeText(t);bm('Backup copiado. Cole no outro navegador, em "Importar backup".')}catch(e){$('bkt').value=t;$('bkt').select();bm('Texto do backup colocado na caixa abaixo: copie-o (Ctrl+C).')}};
+$('bkf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('bkt').value=r.result;bm('Arquivo carregado. Escolha Substituir tudo ou Mesclar.')};r.readAsText(f)};
+const rd=()=>{try{const j=JSON.parse($('bkt').value.trim()),d=(j&&j.dados)||j;if(!d||!Array.isArray(d.obras))throw 0;return d.obras.filter(o=>o&&typeof o.nome=='string'&&Array.isArray(o.items))}catch(e){return null}};
+const fix=()=>{if(!S.obras.some(x=>!x.fim))S.obras.push({id:Date.now(),nome:'Nova obra',items:[]});S.cur=S.obras.find(x=>!x.fim).id};
+$('bkrep').onclick=()=>{const o=rd();if(!o||!o.length){bm('Backup inválido ou vazio.');return}
+ if(!a4){a4=1;$('bkrep').textContent='Confirmar: substituir tudo?';setTimeout(()=>{a4=0;$('bkrep').textContent='Substituir tudo'},4000);return}
+ a4=0;$('bkrep').textContent='Substituir tudo';S={obras:o,cur:0,view:'bkp'};fix();save();$('bkt').value='';render();bm('Backup restaurado ✓ ('+o.length+' obras).')};
+$('bkmer').onclick=()=>{const o=rd();if(!o||!o.length){bm('Backup inválido ou vazio.');return}
+ const t=Date.now();o.forEach((x,k)=>S.obras.push({...x,id:t+k,items:x.items.map((i,j)=>({...i,id:t+k*100000+j}))}));
+ save();$('bkt').value='';render();bm('Mesclado ✓ ('+o.length+' obras adicionadas).')};
+function render(){
+ const all=cur().items,tot=all.reduce((a,i)=>a+i.v,0);
+ $('tot').textContent=R(tot);
+ const o=cur(),inFin=S.view=='fin',isF=!!o.fim,vo=!S.view,F=S.obras.filter(x=>x.fim).sort((a,b)=>b.fim.localeCompare(a.fim));
+ $('tabs').innerHTML=S.obras.filter(x=>!x.fim).map(x=>`<button class="tab${vo&&!isF&&x.id==o.id?' on':''}" data-id="${x.id}">${esc(x.nome)}</button>`).join('')+`<button class="tab${inFin||(vo&&isF)?' on':''}" data-id="fin">📁 Finalizadas (${F.length})</button><button class="tab${S.view=='bkp'?' on':''}" data-id="bkp">💾 Backup</button>`;
+ sh('finc',inFin);sh('bkpc',S.view=='bkp');if(S.view=='bkp')memo();
+ const up=sz(S)/LIM*100;sh('avs',up>80||!!window.sf);
+ $('avt').textContent=window.sf?'⚠️ Não foi possível salvar os dados neste navegador (espaço cheio ou armazenamento bloqueado). Baixe um backup agora.':'⚠️ Armazenamento em '+up.toFixed(0)+'% da capacidade. Baixe um backup e apague lançamentos antigos para não perder dados novos.';$('bkinfo').textContent=S.obras.length+' obra(s) e '+S.obras.reduce((a,x)=>a+x.items.length,0)+' lançamento(s) guardados neste navegador.';sh('ban',vo&&isF);sh('obrabar',vo&&!isF);sh('kpis',vo);sh('formc',vo&&!isF);sh('catc',vo);sh('lanc',vo);
+ $('clr').style.display=isF?'none':'';$('pdf').textContent=isF?'Gerar relatório PDF':'Gerar PDF';
+ if(isF)$('bant').textContent='Obra finalizada em '+dt(o.fim)+'. Somente consulta.';
+ $('finl').innerHTML=F.length?F.map(x=>{const t=x.items.reduce((a,i)=>a+i.v,0),ds=x.items.map(i=>i.d).filter(Boolean).sort();return `<div class="cat" style="align-items:center;border-bottom:1px solid var(--bd);padding:10px 0;gap:8px;flex-wrap:wrap"><span><b>${esc(x.nome)}</b><br><span class="mut">Finalizada em ${dt(x.fim)}${ds.length?' · lançamentos de '+dt(ds[0])+' a '+dt(ds[ds.length-1]):''} · ${x.items.length} lançamentos</span></span><span><b>${R(t)}</b> <button class="g" onclick="rel(${x.id})">Relatório PDF</button> <button class="g" onclick="abr(${x.id})">Abrir</button> <button class="g" onclick="reab(${x.id})">Reabrir</button></span></div>`}).join(''):'<span class="mut">Nenhuma obra finalizada ainda.</span>';
+ const m={};all.forEach(i=>m[i.c]=(m[i.c]||0)+i.v);
+ const ce=Object.entries(m).sort((a,b)=>b[1]-a[1]);
+ $('cats').innerHTML=ce.length?ce.map(([k,v])=>`<div class="cat"><span>${esc(k)}</span><span>${R(v)} <span class="mut">(${(v/tot*100).toFixed(0)}%)</span></span></div>`).join(''):'<span class="mut">Sem lançamentos.</span>';
+ const q=$('q').value.toLowerCase(),fc=$('fc').value,fe=$('fe').value;
+ const L=all.filter(i=>(!fc||i.c==fc)&&(!fe||i.e==fe)&&(!q||(i.ds+i.f+i.nf).toLowerCase().includes(q))).sort((a,b)=>(b.d||'').localeCompare(a.d||''));
+ $('tb').innerHTML=L.map(i=>`<tr><td>${dt(i.d)}</td><td>${esc(i.ds)}${i.nf?`<br><span class="mut">NF ${esc(i.nf)}</span>`:''}</td><td>${esc(i.c)}</td><td>${esc(i.e)}</td><td>${esc(i.f)}</td><td>${esc(i.p)}</td><td class="n">${R(i.v)}</td><td>${isF?'':`<button class="x" onclick="del(${i.id})" aria-label="Excluir">✕</button>`}</td></tr>`).join('')||'<tr><td colspan="8" class="mut">Nenhum lançamento.</td></tr>';
+ $('sub').textContent=L.length!=all.length||q?`Filtrado: ${L.length} itens, ${R(L.reduce((a,i)=>a+i.v,0))}`:'';
+}
+window.del=id=>{cur().items=cur().items.filter(i=>i.id!=id);save();render()};
+lastJ=JSON.stringify(S.obras);
+const hasLoc=()=>S.obras.some(o=>o.items.length);
+function push(){if(!syn.col)return;clearTimeout(st);st=setTimeout(doPush,1500)}
+async function doPush(){
+ if(busy){again=1;return}busy=1;
+ try{const j=JSON.stringify(S.obras),t=S.ts||Date.now(),ps=[];
+  for(let i=0;i<j.length;){let e=i+60000;if(e<j.length){const c=j.charCodeAt(e-1);if(c>=0xD800&&c<=0xDBFF)e--}ps.push(j.slice(i,e));i=e}
+  for(let i=0;i<ps.length;i++)await syn.col.doc('sync_p'+i).set({s:ps[i]});
+  await syn.col.doc('sync_meta').set({t,n:ps.length,len:j.length});
+  syn.last=t;ss('☁️ Sincronizado '+hm())}
+ catch(e){ss('⚠️ Falha ao sincronizar')}
+ busy=0;if(again){again=0;push()}
+}
+async function pull(m){
+ try{const ps=[];for(let i=0;i<m.n;i++){const d=await syn.col.doc('sync_p'+i).get();if(!d.exists)throw 0;ps.push(d.data().s)}
+  const o=JSON.parse(ps.join(''));if(!Array.isArray(o))throw 0;
+  if(!o.some(x=>!x.fim))o.push({id:Date.now(),nome:'Minha obra',items:[]});
+  S.obras=o;S.ts=m.t;lastJ=JSON.stringify(o);lsw();render();ss('☁️ Atualizado '+hm())}
+ catch(e){ss('⚠️ Falha ao baixar da nuvem')}
+}
+const snapH=snap=>{const loc=S.ts||0;
+ if(!snap.exists){S.ts=loc||Date.now();lsw();push();return}
+ const m=snap.data();
+ if(m.t>loc){if(!loc&&hasLoc()){syn.cf=m;sh('cfl',true);ss('⚠️ Escolha quais dados usar')}else pull(m)}
+ else if(m.t<loc)push();
+ else ss('☁️ Sincronizado '+hm())};
+$('cfn').onclick=()=>{sh('cfl',false);if(syn.cf)pull(syn.cf)};
+$('cfl2').onclick=()=>{sh('cfl',false);S.ts=Date.now();lsw();push()};
+ss('💾 Salvo neste navegador');
+render();
+</script>
+</body>
+</html>
